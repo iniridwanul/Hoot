@@ -1,0 +1,63 @@
+name: Hoot Updater
+
+on:
+  schedule:
+    # Runs the workflow every 4 hours.
+    - cron: '0 */4 * * *'
+  push:
+    # Runs the workflow on push events to the master branch.
+    branches: [ master ]
+  pull_request:
+    # Runs the workflow on pull requests targeting the master branch.
+    branches: [ master ]
+  
+  # Allows manual triggering of the workflow from the GitHub Actions UI.
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Specifies the runner environment as Ubuntu.
+    runs-on: ubuntu-latest
+    permissions:
+      # Grants write permissions to the repository's contents, needed for pushing changes.
+      contents: write
+
+    steps:
+      # Checks out the repository code.
+      - uses: actions/checkout@v4
+
+      # Installs the 'jq' command-line JSON processor, used in the script.
+      - name: Install dependency
+        run: |
+          sudo apt-get install -y jq
+
+      - name: Scrape Proxies
+        # Allows the workflow to continue even if this step fails.
+        continue-on-error: true
+        # Makes the 'hoot.sh' script executable.
+        # Executes the 'hoot.sh' script to scrape proxies.
+        run: |
+          chmod +x src/hoot.sh
+          sh src/hoot.sh
+        # The script is assumed to create/update proxylist and anonymous-proxylist directories in the parent directory.
+
+      - name: Copy Proxies to Repository Root
+      # Copies the 'proxylist' directory from the parent directory to the repository root.
+      # Copies the 'anonymous-proxylist' directory from the parent directory to the repository root.
+        run: |
+          cp -r ../proxylist ./
+          cp -r ../anonymous-proxylist ./
+        # Assumes the scraping script puts the resulting proxy lists in the parent directory of the repo.
+
+      - name: Push Updated Proxies
+      # Configures Git with the user's email from secrets.
+      # Configures Git with the user's name from secrets.
+      # Stages the 'proxylist' and 'anonymous-proxylist' directories for commit.
+      # Commits the changes with a message.
+        run: |
+          git config --local user.email "${{ secrets.GIT_EMAIL }}"
+          git config --local user.name "${{ secrets.GIT_NAME }}"
+          git add proxylist anonymous-proxylist
+          git commit -am "Updated Proxies"
+          git push origin HEAD:master
+        # Pushes the committed changes to the master branch of the remote repository.
