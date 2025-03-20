@@ -2,8 +2,8 @@ name: Hoot Updater
 
 on:
   schedule:
-    # Runs the workflow every 4 hours.
-    - cron: '0 */4 * * *'
+    # Runs the workflow every 2 hours.
+    - cron: '0 */2 * * *'
   push:
     # Runs the workflow on push events to the master branch.
     branches: [ master ]
