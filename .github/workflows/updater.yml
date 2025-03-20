@@ -42,22 +42,28 @@ jobs:
         # The script is assumed to create/update proxylist and anonymous-proxylist directories in the parent directory.
 
       - name: Copy Proxies to Repository Root
-      # Copies the 'proxylist' directory from the parent directory to the repository root.
-      # Copies the 'anonymous-proxylist' directory from the parent directory to the repository root.
+        # Copies the 'proxylist' directory from the parent directory to the repository root.
+        # Copies the 'anonymous-proxylist' directory from the parent directory to the repository root.
         run: |
           cp -r ../proxylist ./
           cp -r ../anonymous-proxylist ./
         # Assumes the scraping script puts the resulting proxy lists in the parent directory of the repo.
 
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          git diff --quiet || echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
+
       - name: Push Updated Proxies
-      # Configures Git with the user's email from secrets.
-      # Configures Git with the user's name from secrets.
-      # Stages the 'proxylist' and 'anonymous-proxylist' directories for commit.
-      # Commits the changes with a message.
+        if: env.CHANGES_DETECTED == 'true'
+        # Configures Git with the user's email from secrets.
+        # Configures Git with the user's name from secrets.
+        # Stages the 'proxylist' and 'anonymous-proxylist' directories for commit.
+        # Commits the changes with a message.
         run: |
           git config --local user.email "${{ secrets.GIT_EMAIL }}"
           git config --local user.name "${{ secrets.GIT_NAME }}"
           git add proxylist anonymous-proxylist
-          git commit -am "Updated Proxies : $(TZ='Asia/Dhaka' date)"
+          git commit -m "Updated Proxies : $(TZ='Asia/Dhaka' date)"
           git push origin HEAD:master
         # Pushes the committed changes to the master branch of the remote repository.
